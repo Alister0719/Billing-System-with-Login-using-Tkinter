@@ -1,0 +1,114 @@
+import tkinter as tk
+from tkinter import messagebox
+from datetime import datetime
+
+#funcion para leer los usuarios y contraseñas desde un archivo
+
+def login_usuarios(archivo):
+    usuarios = {}
+    try:
+        with open (archivo, "r") as f:
+            for linea in f:
+                nombre, contrasena = linea.strip().split(",")
+                usuarios[nombre] = contrasena
+    except FileNotFoundError:
+        messagebox.showerror("Error", f"No se pudo encontrar el archivo '{archivo}'")
+    return usuarios
+
+#funcion para verificar el login
+def verificar_login(usuarios, nombre, contrasena):
+    if nombre in usuarios and usuarios[nombre] == contrasena:
+        return True
+    else:
+        return False
+    
+
+#funcion que abre el programa de facturacion
+
+def abrir_facturacion():
+    ventana_login.destroy()  #cierra la ventana
+    ejecutar_facturacion()
+
+
+def solicitar_datos_cliente():
+    nombre = input("ingrese el nombre del cliente: ")
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    return nombre,fecha
+
+def solicitar_producto():
+    productos = []
+    while True:
+        producto = input("ingrese el nombre del producto(o 'terminar' para finalizar): ")
+        if producto.lower() == 'terminar':
+            break
+        precio = float(input(f"ingrese el precio del producto '{producto}': "))
+        productos.append((producto,precio))
+    return productos
+
+def calcular_total(productos):
+    total = sum(precio for _, precio in productos)
+    return total
+    
+    
+def procesar_pago(total):
+    while True:
+        cantidad_dinero = float(input(f"el monto total es {total:.2f}. ingrese la cantidad con la que paga:  "))
+        if cantidad_dinero >= total:
+            vuelto = cantidad_dinero - total
+            return cantidad_dinero, vuelto
+        else:
+            print("La cantidad de dinero es insuficiente, intentelo de nuevo.")
+
+
+def imprimir_factura(nombre, fecha, productos, total, cantidad_dinero, vuelto):
+    print("\n" + "=" * 30)
+    print("         FACTURA        ")
+    print("=" * 30)
+    print(f"cliente: {nombre}")
+    print(f"fecha: {fecha}")
+    print("\nproductos:")
+    for producto, precio in productos:
+        print(f"- {producto}: ${precio:.2f}")
+    print(f"\ntotal a pagar: ${total:.2f}")
+    print(f"Dinero recibido: ${cantidad_dinero:.2f}")
+    print(f"vuelto: ${vuelto:.2f}")
+    print("=" * 30)
+
+def ejecutar_facturacion():
+    nombre, fecha = solicitar_datos_cliente()
+    productos = solicitar_producto()
+    total = calcular_total(productos)
+    cantidad_dinero, vuelto = procesar_pago(total)
+    imprimir_factura(nombre, fecha, productos, total, cantidad_dinero, vuelto)
+
+#funcion que maneja el login
+ 
+def intentar_login():
+    nombre = entry_nombre.get()
+    contrasena = entry_contrasena.get()
+
+    if verificar_login(usuarios, nombre, contrasena):
+        abrir_facturacion()
+    else:
+        messagebox.showerror("Error de autentificación", "nombre de usuario o contraseña incorrectos")
+
+#cargar usuarios desde el archivo
+usuarios = login_usuarios("empleados.txt")
+
+
+#crear ventana de login con tkinter
+
+ventana_login = tk.Tk()
+ventana_login.title("sistema de facturación - login")
+
+tk.Label(ventana_login, text="Nombre de usuario:").pack(pady=5)
+entry_nombre = tk.Entry(ventana_login)
+entry_nombre.pack(pady=5)
+
+tk.Label(ventana_login, text="contraseña").pack(pady=5)
+entry_contrasena = tk.Entry(ventana_login, show="*")
+entry_contrasena.pack(pady=5)
+
+tk.Button(ventana_login, text="iniciar sesión", command=intentar_login).pack(pady=20)
+
+ventana_login.mainloop()
